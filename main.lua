@@ -51,6 +51,7 @@ function ContainerFramework.createRecord(
     ContainerFramework.recordData[recordId] = recordData
     
     ContainerFramework.containerRecords[recordData.container.refId] = recordId
+
     if guiseRefId ~= nil then
         if collision == nil then
             recordData.collision = false
@@ -311,9 +312,7 @@ function ContainerFramework.OnObjectActivateValidator(eventStatus, pid, cellDesc
                 instanceData.container.uniqueIndex
             )
             
-            eventStatus.validDefaultHandler = false
-            
-            return eventStatus
+            return customEventHooks.makeEventStatus(false, nil)
         end
     end
 end
@@ -332,6 +331,10 @@ function ContainerFramework.OnContainerValidator(eventStatus, pid, cellDescripti
 end
 
 function ContainerFramework.OnContainerHandler(eventStatus, pid, cellDescription, objects)
+    if not eventStatus.validCustomHandlers then
+        return
+    end
+
     for _, object in pairs(objects) do
         if ContainerFramework.containerInstances[object.uniqueIndex] ~= nil then
             local instanceId = ContainerFramework.containerInstances[object.uniqueIndex]
@@ -348,6 +351,7 @@ end
 customEventHooks.registerHandler("OnServerPostInit", ContainerFramework.OnServerPostInit)
 customEventHooks.registerHandler("OnServerExit", ContainerFramework.OnServerExit)
 customEventHooks.registerHandler("OnPlayerAuthentified", ContainerFramework.OnPlayerAuthentified)
+
 customEventHooks.registerValidator("OnObjectActivate", ContainerFramework.OnObjectActivateValidator)
 
 customEventHooks.registerValidator("OnContainer", ContainerFramework.OnContainerValidator)
