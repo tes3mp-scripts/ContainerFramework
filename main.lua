@@ -116,7 +116,7 @@ function ContainerFramework.getPacketType(recordType)
     return ContainerFramework.typeToPacketType[recordType]
 end
 
-function ContainerFramework.createContainerAtLocation(recordId, cellDescription, location)
+function ContainerFramework.createContainer(recordId)
     local recordData = ContainerFramework.recordData[recordId]
     
     local instanceData = {
@@ -136,6 +136,17 @@ function ContainerFramework.createContainerAtLocation(recordId, cellDescription,
     )
     
     ContainerFramework.containerInstances[instanceData.container.uniqueIndex] = instanceId
+    ContainerFramework.instanceData[instanceId] = instanceData
+
+    return instanceId
+end
+
+function ContainerFramework.createContainerAtLocation(recordId, cellDescription, location)
+    local recordData = ContainerFramework.recordData[recordId]
+    
+    local instanceId = ContainerFramework.createContainer(recordId)
+
+    local instanceData = ContainerFramework.getInstanceData(instanceId)
     
     if recordData.guise ~= nil then
         instanceData.guise = {}
@@ -203,6 +214,13 @@ function ContainerFramework.removeContainer(instanceId)
     return true
 end
 
+function ContainerFramework.activateContainer(pid, instanceId)
+    logicHandler.ActivateObjectForPlayer(
+        pid,
+        ContainerFramework.config.storage.cell,
+        ContainerFramework.getInstanceData(instanceId).container.uniqueIndex
+    )
+end
 
 function ContainerFramework.getInstanceData(instanceId)
     return ContainerFramework.instanceData[instanceId]
@@ -210,6 +228,10 @@ end
 
 function ContainerFramework.getInventory(instanceId)
     local instanceData = ContainerFramework.getInstanceData(instanceId)
+    local inventory = ContainerFramework.storageCell.data.objectData[instanceData.container.uniqueIndex].inventory
+    if inventory == nil then
+        ContainerFramework.storageCell.data.objectData[instanceData.container.uniqueIndex].inventory = {}
+    end
     return ContainerFramework.storageCell.data.objectData[instanceData.container.uniqueIndex].inventory
 end
 
@@ -298,20 +320,18 @@ function ContainerFramework.OnPlayerAuthentified(eventStatus, pid)
     ContainerFramework.storageCell:LoadInitialCellData(pid)
 end
 
+function ContainerFramework.OnCellUnloadValidator(eventStatus, pid, cellDescription)
+    if cellDescription == ContainerFramework.config.storage.cell then
+        return customEventHooks.makeEventStatus(false, false)
+    end
+end
+
 function ContainerFramework.OnObjectActivateValidator(eventStatus, pid, cellDescription, objects, players)
     for _, object in pairs(objects) do
         if ContainerFramework.guiseInstances[object.uniqueIndex] ~= nil then
             local instanceId = ContainerFramework.guiseInstances[object.uniqueIndex]
-            local instanceData = ContainerFramework.getInstanceData(instanceId)
-
             ContainerFramework.updateInventory(pid, instanceId)
-
-            logicHandler.ActivateObjectForPlayer(
-                pid,
-                ContainerFramework.config.storage.cell,
-                instanceData.container.uniqueIndex
-            )
-            
+            ContainerFramework.activateContainer(pid, instanceId)
             return customEventHooks.makeEventStatus(false, nil)
         end
     end
@@ -319,29 +339,25 @@ end
 
 
 function ContainerFramework.OnContainerValidator(eventStatus, pid, cellDescription, objects)
-    for _, object in pairs(objects) do
+    for index, object in pairs(objects) do
         if ContainerFramework.containerInstances[object.uniqueIndex] ~= nil then
             local instanceId = ContainerFramework.containerInstances[object.uniqueIndex]
             return customEventHooks.triggerValidators(
                 "ContainerFramework_OnContainer",
-                {pid, instanceId}
+                {pid, instanceId, index - 1}
             )
         end
     end
 end
 
 function ContainerFramework.OnContainerHandler(eventStatus, pid, cellDescription, objects)
-    if not eventStatus.validCustomHandlers then
-        return
-    end
-
-    for _, object in pairs(objects) do
+    for index, object in pairs(objects) do
         if ContainerFramework.containerInstances[object.uniqueIndex] ~= nil then
             local instanceId = ContainerFramework.containerInstances[object.uniqueIndex]
             customEventHooks.triggerHandlers(
                 "ContainerFramework_OnContainer",
                 eventStatus,
-                {pid, instanceId}
+                {pid, instanceId, index - 1}
             )
         end
     end
@@ -351,6 +367,8 @@ end
 customEventHooks.registerHandler("OnServerPostInit", ContainerFramework.OnServerPostInit)
 customEventHooks.registerHandler("OnServerExit", ContainerFramework.OnServerExit)
 customEventHooks.registerHandler("OnPlayerAuthentified", ContainerFramework.OnPlayerAuthentified)
+
+customEventHooks.registerValidator("OnCellUnload", ContainerFramework.OnCellUnloadValidator)
 
 customEventHooks.registerValidator("OnObjectActivate", ContainerFramework.OnObjectActivateValidator)
 
