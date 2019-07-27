@@ -74,10 +74,21 @@ The following is a list of all functions in this module (and their arguments) yo
 * `setInventory` changes inventory of `container` to given `inventory`
   * `instanceId`
   * `inventory`
+* `addItem` adds the given `item` (table with `refId`, `count`, `charge`, `enchantmentCharge` and `soul`) to instance's inventory
+  * `instanceId`
+  * `item`
+* `removeExactItem` removes the given `item` from instance's inventory using inventoryHandler's `removeExactitem`
+  * `instanceId`
+  * `item`
+* `removeClosestitem` removes the given `item` from instance's inventory using inventoryHandler's `removeClosestitem`
+  * `instanceId`
+  * `item`
 * `updateinventory` sends necessary packets to `pid`
   * `pid`
   * `instanceId`
 
-There are also an event you can catch:  
-`ContainerFramework_OnContainer` with arguments `{pid, instanceId, index}`, where `index` is the index you need to use `tes3mp.GetContainer...` functions.  
+`setInventory`, `addItem`, `removeExactItem` and `removeClosesItem` also have `Raw` versions (e.g. `setInventoryRaw`) which do not add or remove custom record links. If you certain you don't need that, use them for better performance.  
+
+There is also an event you can catch:  
+`ContainerFramework_OnContainer` with arguments `{pid, instanceId, index}`, where `index` is the container index you pass to `tes3mp.GetContainer...` functions.  
 Has both a Validator and a Handler.

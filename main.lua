@@ -235,10 +235,94 @@ function ContainerFramework.getInventory(instanceId)
     return ContainerFramework.storageCell.data.objectData[instanceData.container.uniqueIndex].inventory
 end
 
-function ContainerFramework.setInventory(instanceId, inventory)
+function ContainerFramework.setInventoryRaw(instanceId, inventory)
     local instanceData = ContainerFramework.getInstanceData(instanceId)
     ContainerFramework.storageCell.data.objectData[instanceData.container.uniqueIndex].inventory = inventory
 end
+
+function ContainerFramework.emptyInventory(instanceId)
+    local inventory = ContainerFramework.getInventory(instanceId)
+    for key, item in pairs(inventory) do
+        ContainerFramework.removeExactItem(instanceId, item)
+    end
+    ContainerFramework.setInventoryRaw(instanceId, {})
+end
+
+function ContainerFramework.setInventory(instanceId, inventory)
+    local instanceData = ContainerFramework.getInstanceData(instanceId)
+    ContainerFramework.emptyInventory(instanceId)
+
+    for key, item in pairs(inventory) do
+        ContainerFramework.addItem(instanceId, item)
+    end
+end
+
+
+function ContainerFramework.addItemRaw(instanceId, item)
+    local inventory = ContainerFramework.getInventory(instanceId)
+    inventoryHelper.addItem(inventory, item.refId, item.count, item.charge, item.enchantmentCharge, item.soul)
+end
+
+function ContainerFramework.addItem(instanceId, item)
+    ContainerFramework.addItemRaw(instanceId, item)
+    if logicHandler.IsGeneratedRecord(item.refId) then
+        local instanceData = ContainerFramework.getInstanceData(instanceId)
+        local recordType = logicHandler.GetRecordTypeByRecordId(item.refId)
+        local recordStore = logicHandler.GetRecordStoreByRecordId(item.refId)
+
+        recordStore:AddLinkToCell(item.refId, ContainerFramework.storageCell)
+        
+        ContainerFramework.storageCell:AddLinkToRecord(
+            logicHandler.GetRecordTypeByRecordId(item.refId),
+            item.refId,
+            instanceData.container.uniqueIndex
+        )
+    end
+end
+
+
+function ContainerFramework.removeRecordLink(instanceId, item)
+    local inventory = ContainerFramework.getInventory(instanceId)
+
+    if
+        logicHandler.IsGeneratedRecord(item.refId)
+        and
+        not inventoryHelper.containsItem(inventory, item.refId, item.charge, item.enchantmentCharge, item.soul)
+    then
+        local instanceData = ContainerFramework.getInstanceData(instanceId)
+        local recordType = logicHandler.GetRecordTypeByRecordId(item.refId)
+        local recordStore = logicHandler.GetRecordStoreByRecordId(item.refId)
+
+        recordStore:RemoveLinkToCell(item.refId, ContainerFramework.storageCell)
+        
+        ContainerFramework.storageCell:RemoveLinkToRecord(
+            logicHandler.GetRecordTypeByRecordId(item.refId),
+            item.refId,
+            instanceData.container.uniqueIndex
+        )
+    end
+end
+
+function ContainerFramework.removeExactItemRaw(instanceId, item)
+    local inventory = ContainerFramework.getInventory(instanceId)
+    inventoryHelper.removeExactItem(inventory, item.refId, item.count, item.charge, item.enchantmentCharge, item.soul)
+end
+
+function ContainerFramework.removeExactItem(instanceId, item)
+    removeExactItemRaw(instanceId, item)
+    ContainerFramework.removeRecordLink(instanceId, item)
+end
+
+function ContainerFramework.removeClosestItemRaw(instanceId, item)
+    local inventory = ContainerFramework.getInventory(instanceId)
+    inventoryHelper.removeExactItem(inventory, item.refId, item.count, item.charge, item.enchantmentCharge, item.soul)
+end
+
+function ContainerFramework.removeClosestItem(instanceId, item)
+    ContainerFramework.removeClosestItemRaw(instanceId, item)
+    ContainerFramework.removeRecordLink(instanceId, item)
+end
+
 
 function ContainerFramework.updateInventory(pid, instanceId)
     local instanceData = ContainerFramework.getInstanceData(instanceId)
@@ -374,7 +458,5 @@ customEventHooks.registerValidator("OnObjectActivate", ContainerFramework.OnObje
 
 customEventHooks.registerValidator("OnContainer", ContainerFramework.OnContainerValidator)
 customEventHooks.registerHandler("OnContainer", ContainerFramework.OnContainerHandler)
-
-ContainerFramework.commandStatus = {}
 
 return ContainerFramework
