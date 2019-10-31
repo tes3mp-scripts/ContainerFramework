@@ -309,7 +309,7 @@ function ContainerFramework.removeExactItemRaw(instanceId, item)
 end
 
 function ContainerFramework.removeExactItem(instanceId, item)
-    removeExactItemRaw(instanceId, item)
+    ContainerFramework.removeExactItemRaw(instanceId, item)
     ContainerFramework.removeRecordLink(instanceId, item)
 end
 
