@@ -46,10 +46,10 @@ function ContainerFramework.createRecord(
             type = containerPacketType
         }
     }
-    
+
     local recordId = #ContainerFramework.recordData + 1
     ContainerFramework.recordData[recordId] = recordData
-    
+
     ContainerFramework.containerRecords[recordData.container.refId] = recordId
 
     if guiseRefId ~= nil then
@@ -58,14 +58,14 @@ function ContainerFramework.createRecord(
         else
             recordData.collision = collision
         end
-        
+
         recordData.guise = {
             refId = guiseRefId,
             type = guisePacketType
         }
-        
+
         ContainerFramework.guiseRecords[recordData.guise.refId] = recordId
-        
+
         if recordData.collision then
             table.insert(config.enforcedCollisionRefIds, recordData.guise.refId)
             local player = tableHelper.getAnyValue(Players)
@@ -74,24 +74,24 @@ function ContainerFramework.createRecord(
             end
         end
     end
-    
+
     return recordId
 end
 
-function ContainerFramework.removeRecord(recordid)
+function ContainerFramework.removeRecord(recordId)
     local recordData = ContainerFramework.recordData[recordId]
-    
+
     if recordData ~= nil then
         ContainerFramework.containerRecords[recordData.container.refId] = nil
-        
+
         if recordData.guise ~= nil then
             ContainerFramework.guiseRecords[recordData.guise.refId] = nil
-            
+
             if recordData.collision then
                 tableHelper.removeValue(config.enforcedCollisionRefIds, recordData.guise.refId)
             end
         end
-        
+
         ContainerFramework.recordData[recordId] = nil
     end
 end
@@ -118,23 +118,23 @@ end
 
 function ContainerFramework.createContainer(recordId)
     local recordData = ContainerFramework.recordData[recordId]
-    
+
     local instanceData = {
         recordId = recordId,
         container = {}
     }
-    
+
     local instanceId = #ContainerFramework.instanceData + 1
-    
+
     instanceData.container.cellDescription = ContainerFramework.config.storage.cell
-    
+
     instanceData.container.uniqueIndex = logicHandler.CreateObjectAtLocation(
         ContainerFramework.config.storage.cell,
         ContainerFramework.config.storage.location,
         recordData.container.refId,
         recordData.container.type
     )
-    
+
     ContainerFramework.containerInstances[instanceData.container.uniqueIndex] = instanceId
     ContainerFramework.instanceData[instanceId] = instanceData
 
@@ -143,25 +143,25 @@ end
 
 function ContainerFramework.createContainerAtLocation(recordId, cellDescription, location)
     local recordData = ContainerFramework.recordData[recordId]
-    
+
     local instanceId = ContainerFramework.createContainer(recordId)
 
     local instanceData = ContainerFramework.getInstanceData(instanceId)
-    
+
     if recordData.guise ~= nil then
         instanceData.guise = {}
         instanceData.guise.cellDescription = cellDescription
-        
+
         instanceData.guise.uniqueIndex = logicHandler.CreateObjectAtLocation(
             cellDescription,
             location,
             recordData.guise.refId,
             recordData.guise.type
         )
-        
+
         ContainerFramework.guiseInstances[instanceData.guise.uniqueIndex] = instanceId
     end
-    
+
     ContainerFramework.instanceData[instanceId] = instanceData
 
     return instanceId
@@ -197,7 +197,7 @@ function ContainerFramework.removeContainer(instanceId)
         instanceData.container.uniqueIndex,
         instanceData.container.cellDescription
     )
-        
+
     if instanceData.guise ~= nil then
         ContainerFramework.removeObject(
             instanceData.guise.uniqueIndex,
@@ -267,11 +267,10 @@ function ContainerFramework.addItem(instanceId, item)
     ContainerFramework.addItemRaw(instanceId, item)
     if logicHandler.IsGeneratedRecord(item.refId) then
         local instanceData = ContainerFramework.getInstanceData(instanceId)
-        local recordType = logicHandler.GetRecordTypeByRecordId(item.refId)
         local recordStore = logicHandler.GetRecordStoreByRecordId(item.refId)
 
         recordStore:AddLinkToCell(item.refId, ContainerFramework.storageCell)
-        
+
         ContainerFramework.storageCell:AddLinkToRecord(
             logicHandler.GetRecordTypeByRecordId(item.refId),
             item.refId,
@@ -290,11 +289,10 @@ function ContainerFramework.removeRecordLink(instanceId, item)
         not inventoryHelper.containsItem(inventory, item.refId, item.charge, item.enchantmentCharge, item.soul)
     then
         local instanceData = ContainerFramework.getInstanceData(instanceId)
-        local recordType = logicHandler.GetRecordTypeByRecordId(item.refId)
         local recordStore = logicHandler.GetRecordStoreByRecordId(item.refId)
 
         recordStore:RemoveLinkToCell(item.refId, ContainerFramework.storageCell)
-        
+
         ContainerFramework.storageCell:RemoveLinkToRecord(
             logicHandler.GetRecordTypeByRecordId(item.refId),
             item.refId,
@@ -347,19 +345,19 @@ end
 
 function ContainerFramework.loadData()
     local data = DataManager.loadData(ContainerFramework.scriptName, ContainerFramework.defaultData)
-    
+
     ContainerFramework.recordData = data.recordData
     for recordId, recordData in pairs(ContainerFramework.recordData) do
         ContainerFramework.containerRecords[recordData.container.refId] = recordId
         if recordData.guise ~= nil then
             ContainerFramework.containerRecords[recordData.guise.refId] = recordId
-            
+
             if recordData.collision then
                 table.insert(config.enforcedCollisionRefIds, recordData.guise.refId)
             end
         end
     end
-    
+
     ContainerFramework.instanceData = data.instanceData
     for instanceId, instanceData in pairs(ContainerFramework.instanceData) do
         ContainerFramework.containerInstances[instanceData.container.uniqueIndex] = instanceId
