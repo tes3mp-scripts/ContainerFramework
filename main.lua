@@ -250,10 +250,18 @@ end
 
 function ContainerFramework.setInventory(instanceId, inventory)
     local instanceData = ContainerFramework.getInstanceData(instanceId)
+    local guiseCell = instanceData.guise.cellDescription
+    if not LoadedCells[guiseCell] then
+        tempLoad = true
+        logicHandler.LoadCell(guiseCell)
+    end
     ContainerFramework.emptyInventory(instanceId)
 
-    for key, item in pairs(inventory) do
+    for _, item in pairs(inventory) do
         ContainerFramework.addItem(instanceId, item)
+    end
+    if tempLoad then
+        logicHandler.UnloadCell(guiseCell)
     end
 end
 
