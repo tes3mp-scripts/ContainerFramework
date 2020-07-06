@@ -271,6 +271,22 @@ function ContainerFramework.addItem(instanceId, item)
 
         recordStore:AddLinkToCell(item.refId, ContainerFramework.storageCell)
 
+        if instanceData.guise then
+            local guiseCell = instanceData.guise.cellDescription
+            local tempLoad = false
+            if not LoadedCells[guiseCell] then
+                tempLoad = true
+                logicHandler.LoadCell(guiseCell)
+            end
+            LoadedCells[guiseCell]:AddLinkToRecord(
+                logicHandler.GetRecordTypeByRecordId(item.refId),
+                item.refId,
+                instanceData.guise.uniqueIndex
+            )
+            if tempLoad then
+                logicHandler.UnloadCell(guiseCell)
+            end
+        end
         ContainerFramework.storageCell:AddLinkToRecord(
             logicHandler.GetRecordTypeByRecordId(item.refId),
             item.refId,
