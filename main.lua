@@ -1,4 +1,4 @@
-local ContainerFramework = {}
+ContainerFramework = {}
 
 ContainerFramework.scriptName = "ContainerFramework"
 
