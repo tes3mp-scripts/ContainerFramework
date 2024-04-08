@@ -128,11 +128,13 @@ function ContainerFramework.createContainer(recordId)
 
     instanceData.container.cellDescription = ContainerFramework.config.storage.cell
 
+    local objData = { refId = recordData.container.refId, count = 1, charge = -1, enchantmentCharge = -1, soul = -1}
+
     instanceData.container.uniqueIndex = logicHandler.CreateObjectAtLocation(
         ContainerFramework.config.storage.cell,
         ContainerFramework.config.storage.location,
-        recordData.container.refId,
-        recordData.container.type
+        objData,
+        "place"
     )
 
     ContainerFramework.containerInstances[instanceData.container.uniqueIndex] = instanceId
@@ -152,11 +154,14 @@ function ContainerFramework.createContainerAtLocation(recordId, cellDescription,
         instanceData.guise = {}
         instanceData.guise.cellDescription = cellDescription
 
+        local objData = { refId = recordData.guise.refId, count = 1, charge = -1, enchantmentCharge = -1, soul = -1}
+
+
         instanceData.guise.uniqueIndex = logicHandler.CreateObjectAtLocation(
             cellDescription,
             location,
-            recordData.guise.refId,
-            recordData.guise.type
+            objData,
+            "place"
         )
 
         ContainerFramework.guiseInstances[instanceData.guise.uniqueIndex] = instanceId
@@ -278,6 +283,7 @@ end
 
 function ContainerFramework.addItem(instanceId, item)
     ContainerFramework.addItemRaw(instanceId, item)
+	
     if logicHandler.IsGeneratedRecord(item.refId) then
         local instanceData = ContainerFramework.getInstanceData(instanceId)
         local recordStore = logicHandler.GetRecordStoreByRecordId(item.refId)
